@@ -59,13 +59,36 @@ var TitleState = {
       if (this.playButton && this.playButton.events && this.playButton.events.onInputUp) {
         this.playButton.events.onInputUp.dispatch(this.playButton);
       }
+      if (this.nextButton && typeof this.nextButton._upFrame !== 'undefined') {
+  this.nextButton.frame = this.nextButton._upFrame;
+}
     }, this);
 
-    // Mute button
-    createMuteButton(this);
+    // Mute button (ADA keyboard accessible with 'M' key)
+    this.muteButton = createMuteButton(this);   // or createMuteButtonPos(this, x, y)
+    // Bind 'M' for THIS scene (down = pressed look, up = toggle + reset)
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.M]);    // optional but nice
+    this.muteKey = this.input.keyboard.addKey(Phaser.Keyboard.M);
+
+    this.muteKey.onDown.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputDown) {
+       this.muteButton.events.onInputDown.dispatch(this.muteButton);  // pressed frame
+      }
+    }, this);
+
+    this.muteKey.onUp.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputUp) {
+        this.muteButton.events.onInputUp.dispatch(this.muteButton);    // toggle + frame reset
+      } else if (window.AudioManager && typeof AudioManager.toggleMusic === 'function') {
+        AudioManager.toggleMusic(this);  // fallback if a scene doesn’t draw a button
+      }
+    }, this);
+
+
 
     // Audio
     AudioManager.playSong("title_music", this);
+
   },
   update: function () {
     updateCloudSprites(this);
@@ -76,4 +99,14 @@ var TitleState = {
       this.state.start("IntroState");
     },
   },
+
+  // Good practice, cleans up onDown/onUp handlers for M key
+shutdown: function () {
+  if (this.muteKey) {
+    this.muteKey.onDown.removeAll(this);
+    this.muteKey.onUp.removeAll(this);
+    this.muteKey = null;
+  }
+}
+
 };

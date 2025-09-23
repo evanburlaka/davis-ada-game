@@ -185,6 +185,21 @@ var IntroState = {
       .yoyo(true, 0)
       .loop(true);
 
+    // Keyboard ADA Access for 'next' button (Enter Key)  
+    this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+    // Press-and-hold visual (downFrame)
+    this.enterKey.onDown.add(function () {
+      if (this.nextButton && this.nextButton.events && this.nextButton.events.onInputDown) {
+        this.nextButton.events.onInputDown.dispatch(this.nextButton);
+      }
+    }, this);
+    // Release, trigger normal click flow (callback fires on inputUp)
+    this.enterKey.onUp.add(function () {
+      if (this.nextButton && this.nextButton.events && this.nextButton.events.onInputUp) {
+        this.nextButton.events.onInputUp.dispatch(this.nextButton);
+      }
+    }, this);
+
     // Start Animation
     this.nextDelay = 1000;
     this.animationSpeed = 500;
@@ -203,8 +218,26 @@ var IntroState = {
       this
     );
 
-    // Mute button
-    createMuteButton(this);
+    // Mute button (ADA keyboard accessible with 'M' key)
+    this.muteButton = createMuteButton(this);   // or createMuteButtonPos(this, x, y)
+    // Bind 'M' for THIS scene (down = pressed look, up = toggle + reset)
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.M]);    // optional but nice
+    this.muteKey = this.input.keyboard.addKey(Phaser.Keyboard.M);
+
+    this.muteKey.onDown.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputDown) {
+       this.muteButton.events.onInputDown.dispatch(this.muteButton);  // pressed frame
+      }
+    }, this);
+
+    this.muteKey.onUp.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputUp) {
+        this.muteButton.events.onInputUp.dispatch(this.muteButton);    // toggle + frame reset
+      } else if (window.AudioManager && typeof AudioManager.toggleMusic === 'function') {
+        AudioManager.toggleMusic(this);  // fallback if a scene doesn’t draw a button
+      }
+    }, this);
+
   },
   update: function () {
     updateCloudSprites(this);
@@ -354,4 +387,13 @@ var IntroState = {
       this.nextSubScene();
     },
   },
+  
+  // Good practice, cleans up onDown/onUp handlers for M key
+  shutdown: function () {
+  if (this.muteKey) {
+    this.muteKey.onDown.removeAll(this);
+    this.muteKey.onUp.removeAll(this);
+    this.muteKey = null;
+  }
+}
 };
