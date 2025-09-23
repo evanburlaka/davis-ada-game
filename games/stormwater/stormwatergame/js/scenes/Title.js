@@ -46,6 +46,21 @@ var TitleState = {
       .yoyo(true, 0)
       .loop(true);
 
+    // Keyboard ADA Access for play button (Enter Key)  
+    this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+    // Press-and-hold visual (downFrame)
+    this.enterKey.onDown.add(function () {
+      if (this.playButton && this.playButton.events && this.playButton.events.onInputDown) {
+        this.playButton.events.onInputDown.dispatch(this.playButton);
+      }
+    }, this);
+    // Release, trigger normal click flow (callback fires on inputUp)
+    this.enterKey.onUp.add(function () {
+      if (this.playButton && this.playButton.events && this.playButton.events.onInputUp) {
+        this.playButton.events.onInputUp.dispatch(this.playButton);
+      }
+    }, this);
+
     // Mute button
     createMuteButton(this);
 
