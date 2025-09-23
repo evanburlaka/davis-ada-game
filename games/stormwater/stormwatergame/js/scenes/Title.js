@@ -46,6 +46,12 @@ var TitleState = {
       .yoyo(true, 0)
       .loop(true);
 
+    // Enter Key Icon
+    var playHint = this.add.sprite(0, this.playButton.height * 0.65, "icon_enter");
+    playHint.anchor.set(0.0, 0.95);
+    playHint.scale.setTo(0.5);
+    this.playButton.addChild(playHint);
+
     // Keyboard ADA Access for play button (Enter Key)  
     this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
     // Press-and-hold visual (downFrame)
@@ -60,8 +66,8 @@ var TitleState = {
         this.playButton.events.onInputUp.dispatch(this.playButton);
       }
       if (this.nextButton && typeof this.nextButton._upFrame !== 'undefined') {
-  this.nextButton.frame = this.nextButton._upFrame;
-}
+        this.nextButton.frame = this.nextButton._upFrame;
+      }
     }, this);
 
     // Mute button (ADA keyboard accessible with 'M' key)
@@ -84,7 +90,11 @@ var TitleState = {
       }
     }, this);
 
-
+    // Mute Key Icon
+    var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
+    muteHint.anchor.set(0.1, 0.-0.3);
+    muteHint.scale.setTo(0.5);
+    this.muteButton.addChild(muteHint);
 
     // Audio
     AudioManager.playSong("title_music", this);

@@ -185,6 +185,12 @@ var IntroState = {
       .yoyo(true, 0)
       .loop(true);
 
+    // Enter Key Icon
+    var nextHint = this.add.sprite(0, this.nextButton.height * 0.65, "icon_enter");
+    nextHint.anchor.set(0.0, 0.95);
+    nextHint.scale.setTo(0.5);
+    this.nextButton.addChild(nextHint);
+
     // Keyboard ADA Access for 'next' button (Enter Key)  
     this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
     // Press-and-hold visual (downFrame)
@@ -238,6 +244,11 @@ var IntroState = {
       }
     }, this);
 
+    // Mute Key Icon
+    var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
+    muteHint.anchor.set(0.1, 0.-0.3);
+    muteHint.scale.setTo(0.5);
+    this.muteButton.addChild(muteHint);
   },
   update: function () {
     updateCloudSprites(this);

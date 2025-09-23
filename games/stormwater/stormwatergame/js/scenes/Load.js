@@ -58,6 +58,10 @@ var LoadState = {
     this.load.image("infobox_intro3", "assets/infobox_intro/3.png");
     this.load.image("infobox_intro4", "assets/infobox_intro/4.png");
 
+    // Keybinds
+    this.load.image("icon_enter", "assets/keybinds/Enter_Key_Light.png");
+    this.load.image("icon_m", "assets/keybinds/M_Key_Light.png");
+
     // Buttons
     this.load.spritesheet("button_play", "assets/button/play.png", 116, 116);
     this.load.spritesheet("button_pause", "assets/button/pause.png", 116, 116);
