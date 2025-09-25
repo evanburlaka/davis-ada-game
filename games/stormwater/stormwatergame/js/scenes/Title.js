@@ -48,7 +48,7 @@ var TitleState = {
 
     // Enter Key Icon
     var playHint = this.add.sprite(0, this.playButton.height * 0.65, "icon_enter");
-    playHint.anchor.set(0.0, 0.95);
+    playHint.anchor.set(0.0, 1.0);
     playHint.scale.setTo(0.5);
     this.playButton.addChild(playHint);
 
@@ -111,12 +111,12 @@ var TitleState = {
   },
 
   // Good practice, cleans up onDown/onUp handlers for M key
-shutdown: function () {
-  if (this.muteKey) {
-    this.muteKey.onDown.removeAll(this);
-    this.muteKey.onUp.removeAll(this);
-    this.muteKey = null;
+  shutdown: function () {
+    if (this.muteKey) {
+      this.muteKey.onDown.removeAll(this);
+      this.muteKey.onUp.removeAll(this);
+      this.muteKey = null;
+    }
   }
-}
 
 };

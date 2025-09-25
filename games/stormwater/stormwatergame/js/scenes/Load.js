@@ -61,6 +61,9 @@ var LoadState = {
     // Keybinds
     this.load.image("icon_enter", "assets/keybinds/Enter_Key_Light.png");
     this.load.image("icon_m", "assets/keybinds/M_Key_Light.png");
+    this.load.image("icon_left", "assets/keybinds/Arrow_Left_Key_Light.png");
+    this.load.image("icon_right", "assets/keybinds/Arrow_Right_Key_Light.png");
+    
 
     // Buttons
     this.load.spritesheet("button_play", "assets/button/play.png", 116, 116);

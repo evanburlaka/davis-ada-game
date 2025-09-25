@@ -187,7 +187,7 @@ var IntroState = {
 
     // Enter Key Icon
     var nextHint = this.add.sprite(0, this.nextButton.height * 0.65, "icon_enter");
-    nextHint.anchor.set(0.0, 0.95);
+    nextHint.anchor.set(0.0, 1.0);
     nextHint.scale.setTo(0.5);
     this.nextButton.addChild(nextHint);
 
@@ -399,12 +399,17 @@ var IntroState = {
     },
   },
   
-  // Good practice, cleans up onDown/onUp handlers for M key
+  // Good practice, cleans up onDown/onUp handlers for M, and ENTER key
   shutdown: function () {
   if (this.muteKey) {
     this.muteKey.onDown.removeAll(this);
     this.muteKey.onUp.removeAll(this);
     this.muteKey = null;
+  }
+  if (this.enterKey) {
+    this.enterKey.onDown.removeAll(this);
+    this.enterKey.onUp.removeAll(this);
+    this.enterKey = null;
   }
 }
 };
