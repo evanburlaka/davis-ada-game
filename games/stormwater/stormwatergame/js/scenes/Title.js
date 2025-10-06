@@ -102,13 +102,20 @@ var TitleState = {
     AudioManager.playSong("title_music", this);
 
     // TAB toggle (show/hide hints)
-    this.showHints = true;
+    // Read from global (non-persistent) flag and apply
+    this.showHints = (typeof this.game.showHints === 'boolean') ? this.game.showHints : true;
+    this.toggleHints(this.showHints);
     this.input.keyboard.addKeyCapture([Phaser.Keyboard.TAB]);
     this.tabKey = this.input.keyboard.addKey(Phaser.Keyboard.TAB);
     this.tabKey.onUp.add(function () {
       this.showHints = !this.showHints;
+      this.game.showHints = this.showHints;   // persist across scenes (not across reload)
       this.toggleHints(this.showHints);
     }, this);
+
+    // Show Tab Hint
+    this.tabHint = addTabHint(this.game);
+
 
   },
   update: function () {
