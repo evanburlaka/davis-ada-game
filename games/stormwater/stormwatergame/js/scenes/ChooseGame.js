@@ -98,6 +98,7 @@ var ChooseGameState = {
     var ffHint = this.add.sprite(0, this.ffButton.height * 0.65, "icon_left");
     ffHint.anchor.set(0.5, 0.5);
     ffHint.scale.setTo(0.6);
+    ffHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.ffButton.addChild(ffHint);
 
     // Right Arrow (pp)
@@ -124,6 +125,7 @@ var ChooseGameState = {
     var ppHint = this.add.sprite(0, this.ppButton.height * 0.65, "icon_right");
     ppHint.anchor.set(0.5, 0.5);
     ppHint.scale.setTo(0.6);
+    ppHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.ppButton.addChild(ppHint);
 
     // Mute button (ADA keyboard accessible with 'M' key)
@@ -150,7 +152,17 @@ var ChooseGameState = {
     var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
     muteHint.anchor.set(0.1, 0.-0.3);
     muteHint.scale.setTo(0.5);
+    muteHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.muteButton.addChild(muteHint);
+
+    // TAB toggle (show/hide hints)
+    this.showHints = true;
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.TAB]);
+    this.tabKey = this.input.keyboard.addKey(Phaser.Keyboard.TAB);
+    this.tabKey.onUp.add(function () {
+      this.showHints = !this.showHints;
+      this.toggleHints(this.showHints);
+    }, this);
 
     // Start Animation
     this.animationSpeed = 500;
@@ -181,6 +193,20 @@ var ChooseGameState = {
     },
   },
 
+  toggleHints: function (show) {
+  this._setHintsOn(this.ffButton, show);
+  this._setHintsOn(this.ppButton, show);
+  this._setHintsOn(this.muteButton, show);
+  },
+
+  _setHintsOn: function (button, show) {
+    if (!button || !button.children) return;
+    for (var i = 0; i < button.children.length; i++) {
+      var c = button.children[i];
+      if (c && c.isHint) c.visible = show;
+    }
+  },
+
   // Good practice, cleans up onDown/onUp handlers for M, LEFT, RIGHT key
   shutdown: function () {
     if (this.muteKey) {
@@ -197,6 +223,10 @@ var ChooseGameState = {
       this.rightKey.onDown.removeAll(this);
       this.rightKey.onUp.removeAll(this);
       this.rightKey = null;
+    }
+    if (this.tabKey) {
+      this.tabKey.onUp.removeAll(this);
+      this.tabKey = null;
     }
   }
 };
