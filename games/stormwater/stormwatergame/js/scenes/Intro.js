@@ -189,6 +189,7 @@ var IntroState = {
     var nextHint = this.add.sprite(0, this.nextButton.height * 0.65, "icon_enter");
     nextHint.anchor.set(0.0, 1.0);
     nextHint.scale.setTo(0.5);
+    nextHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.nextButton.addChild(nextHint);
 
     // Keyboard ADA Access for 'next' button (Enter Key)  
@@ -248,7 +249,23 @@ var IntroState = {
     var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
     muteHint.anchor.set(0.1, 0.-0.3);
     muteHint.scale.setTo(0.5);
+    muteHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.muteButton.addChild(muteHint);
+
+    // TAB toggle (show/hide hints)
+    // Read from global (non-persistent) flag and apply
+    this.showHints = (typeof this.game.showHints === 'boolean') ? this.game.showHints : true;
+    this.toggleHints(this.showHints);
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.TAB]);
+    this.tabKey = this.input.keyboard.addKey(Phaser.Keyboard.TAB);
+    this.tabKey.onUp.add(function () {
+      this.showHints = !this.showHints;
+      this.game.showHints = this.showHints;   // persist across scenes (not across reload)
+      this.toggleHints(this.showHints);
+    }, this);
+
+    // Show Tab Hint
+    this.tabHint = addTabHint(this.game);
   },
   update: function () {
     updateCloudSprites(this);
@@ -399,17 +416,36 @@ var IntroState = {
     },
   },
   
+  toggleHints: function (show) {
+    // Toggle hints under known buttons in this scene
+    this._setHintsOn(this.nextButton, show);
+    this._setHintsOn(this.muteButton, show);
+  },
+
+  _setHintsOn: function (button, show) {
+    if (!button || !button.children) return;
+    for (var i = 0; i < button.children.length; i++) {
+      var c = button.children[i];
+      if (c && c.isHint) c.visible = show;
+    }
+  },
+
   // Good practice, cleans up onDown/onUp handlers for M, and ENTER key
   shutdown: function () {
-  if (this.muteKey) {
-    this.muteKey.onDown.removeAll(this);
-    this.muteKey.onUp.removeAll(this);
-    this.muteKey = null;
+    if (this.muteKey) {
+      this.muteKey.onDown.removeAll(this);
+      this.muteKey.onUp.removeAll(this);
+      this.muteKey = null;
+    }
+    if (this.enterKey) {
+      this.enterKey.onDown.removeAll(this);
+      this.enterKey.onUp.removeAll(this);
+      this.enterKey = null;
+    }
+    if (this.tabKey) {
+      this.tabKey.onUp.removeAll(this);
+      this.tabKey = null;
+    }
   }
-  if (this.enterKey) {
-    this.enterKey.onDown.removeAll(this);
-    this.enterKey.onUp.removeAll(this);
-    this.enterKey = null;
-  }
-}
+
 };
