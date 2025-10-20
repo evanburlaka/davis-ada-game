@@ -21,5 +21,6 @@ var BootState = {
   },
   create: function () {
     this.state.start("LoadState");
+    this.game.showHints = true;  // default each time the page loads
   },
 };
