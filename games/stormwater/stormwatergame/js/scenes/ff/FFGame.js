@@ -288,6 +288,70 @@ var FFGameState = {
 
     // Mute Button
     createMuteButton(this);
+
+    // Keyboard Accessibility for Pause & Mute buttons 
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.P, Phaser.Keyboard.M]);
+
+    // Pause button (P key) 
+    this.pKey = this.input.keyboard.addKey(Phaser.Keyboard.P);
+    this.pKey.onDown.add(function () {
+      if (this.pauseButton && this.pauseButton.events && this.pauseButton.events.onInputDown) {
+        this.pauseButton.events.onInputDown.dispatch(this.pauseButton); // show pressed frame
+      }
+    }, this);
+    this.pKey.onUp.add(function () {
+      if (this.pauseButton && this.pauseButton.events && this.pauseButton.events.onInputUp) {
+        this.pauseButton.events.onInputUp.dispatch(this.pauseButton);   // normal click flow
+      }
+    }, this);
+
+    // Pause Key Icon
+    var pauseHint = this.add.sprite(0, this.pauseButton.height * 0.65, "icon_p");
+    pauseHint.anchor.set(0.1, 0.-0.3);
+    pauseHint.scale.setTo(0.5);
+    pauseHint.isHint = true; // Mark as hint (Used to toggle visibility)
+    this.pauseButton.addChild(pauseHint);
+
+    // Mute button (M key)
+    this.muteKey = this.input.keyboard.addKey(Phaser.Keyboard.M);
+    this.muteKey.onDown.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputDown) {
+        this.muteButton.events.onInputDown.dispatch(this.muteButton);   // pressed animation
+      }
+    }, this);
+    this.muteKey.onUp.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputUp) {
+        this.muteButton.events.onInputUp.dispatch(this.muteButton);     // toggle + reset
+      } else if (window.AudioManager && typeof AudioManager.toggleMusic === "function") {
+        AudioManager.toggleMusic(this);                                 // fallback (if mute not visible)
+      }
+    }, this);
+
+    // Mute Key Icon
+    var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
+    muteHint.anchor.set(0.1, 0.-0.3);
+    muteHint.scale.setTo(0.5);
+    muteHint.isHint = true; // Mark as hint (Used to toggle visibility)
+    this.muteButton.addChild(muteHint);
+
+    // TAB toggle for hint icons (safe + in-memory) 
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.TAB]);
+    this.tabKey = this.input.keyboard.addKey(Phaser.Keyboard.TAB);
+
+    this.tabKey.onUp.add(function () {
+      this.showHints = !this.showHints;
+      this.game.showHints = this.showHints;      // persists across scenes (not across refresh)
+      this.toggleHints(this.showHints);
+    }, this);
+
+    // Initial visibility from global flag (default true)
+    this.showHints = (typeof this.game.showHints === 'boolean') ? this.game.showHints : true;
+    this.toggleHints(this.showHints);
+
+    // show bottom-right Tab help only if helper is loaded
+    if (typeof addTabHint === 'function') {
+      this.tabHint = addTabHint(this.game);
+    }
   },
   update: function () {},
   setOptionsClickable: function (clickable) {
@@ -418,5 +482,24 @@ var FFGameState = {
       // this.finishedButton.anchor.setTo(0.5, 0.5);
       // this.add.tween(this.finishedButton.scale).to({ x: 1.1, y: 1.1 }, 600, "Linear", true, 0, -1, true);
     }
+  },
+
+  toggleHints: function (show) {
+    this._setHintsOn(this.pauseButton, show);
+    this._setHintsOn(this.muteButton,  show);
+  },
+  _setHintsOn: function (button, show) {
+    if (!button || !button.children) return;
+    for (var i = 0; i < button.children.length; i++) {
+      var c = button.children[i];
+      if (c && c.isHint) c.visible = show;
+    }
+  },
+
+  shutdown: function () {
+    if (this.pKey)    { this.pKey.onDown.removeAll(this);    this.pKey.onUp.removeAll(this);    this.pKey = null; }
+    if (this.muteKey) { this.muteKey.onDown.removeAll(this); this.muteKey.onUp.removeAll(this); this.muteKey = null; }
+    if (this.tabKey)  { this.tabKey.onUp.removeAll(this);    this.tabKey = null; }
+    if (this.tabHint) { this.tabHint.destroy(true); this.tabHint = null; }
   },
 };
