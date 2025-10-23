@@ -60,6 +60,9 @@ var LoadState = {
 
     // Keybinds
     this.load.image("icon_enter", "assets/keybinds/Enter_Key_Light.png");
+    this.load.image("icon_1", "assets/keybinds/1_Key_Light.png");
+    this.load.image("icon_2", "assets/keybinds/2_Key_Light.png");
+    this.load.image("icon_3", "assets/keybinds/3_Key_Light.png");
     this.load.image("icon_m", "assets/keybinds/M_Key_Light.png");
     this.load.image("icon_r", "assets/keybinds/R_Key_Light.png");
     this.load.image("icon_h", "assets/keybinds/H_Key_Light.png");
