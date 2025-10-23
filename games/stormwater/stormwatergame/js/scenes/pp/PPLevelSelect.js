@@ -97,9 +97,6 @@ var PPLevelSelectState = {
       .yoyo(true, 0)
       .loop(true);
 
-    // Mute button
-    createMuteButton(this);
-
     // Start Animation
     this.animationSpeed = 500;
 
@@ -112,6 +109,90 @@ var PPLevelSelectState = {
 
     // Audio (if reset)
     AudioManager.playSong("title_music", this);
+
+    // Keyboard: 1 / 2 / 3 for level select, plus Tab toggle, consistent with other scenes
+    this.input.keyboard.addKeyCapture([
+      Phaser.Keyboard.ONE, Phaser.Keyboard.TWO, Phaser.Keyboard.THREE,
+      Phaser.Keyboard.M, Phaser.Keyboard.TAB
+    ]);
+
+    // Helper: bind a key to a button's down/up so you get the pressed animation + normal click
+    function bindKeyToButton(scene, keyCode, buttonProp) {
+      var key = scene.input.keyboard.addKey(keyCode);
+
+      key.onDown.add(function () {
+        var b = scene[buttonProp];
+        if (b && b.events && b.events.onInputDown) b.events.onInputDown.dispatch(b);
+      }, scene);
+
+      key.onUp.add(function () {
+        var b = scene[buttonProp];
+        if (b && b.events && b.events.onInputUp) b.events.onInputUp.dispatch(b);
+      }, scene);
+
+      return key;
+    }
+
+    // Bind 1/2/3 to level1/2/3
+    this.oneKey   = bindKeyToButton(this, Phaser.Keyboard.ONE,   "level1Btn");
+    this.twoKey   = bindKeyToButton(this, Phaser.Keyboard.TWO,   "level2Btn");
+    this.threeKey = bindKeyToButton(this, Phaser.Keyboard.THREE, "level3Btn");
+
+    // Hint icons under each level button (1/2/3)
+    function addHint(scene, parentBtn, texKey, yFactor, scale) {
+      if (!parentBtn) return null;
+      var s = scene.add.sprite(0, parentBtn.height * 0.65, texKey);
+      s.anchor.set(0.5, 0.1);
+      s.scale.setTo(0.5);
+      s.isHint = true;            // lets toggleHints() find it
+      parentBtn.addChild(s);
+      return s;
+    }
+    addHint(this, this.level1Btn, "icon_1");
+    addHint(this, this.level2Btn, "icon_2");
+    addHint(this, this.level3Btn, "icon_3");
+
+    // Mute button (ADA keyboard accessible with 'M' key)
+    this.muteButton = createMuteButton(this);   // or createMuteButtonPos(this, x, y)
+    // Bind 'M' for THIS scene (down = pressed look, up = toggle + reset)
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.M]);    // optional but nice
+    this.muteKey = this.input.keyboard.addKey(Phaser.Keyboard.M);
+
+    this.muteKey.onDown.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputDown) {
+       this.muteButton.events.onInputDown.dispatch(this.muteButton);  // pressed frame
+      }
+    }, this);
+
+    this.muteKey.onUp.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputUp) {
+        this.muteButton.events.onInputUp.dispatch(this.muteButton);    // toggle + frame reset
+      } else if (window.AudioManager && typeof AudioManager.toggleMusic === 'function') {
+        AudioManager.toggleMusic(this);  // fallback if a scene doesn’t draw a button
+      }
+    }, this);
+
+    // Mute Key Icon
+    var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
+    muteHint.anchor.set(0.1, 0.-0.3);
+    muteHint.scale.setTo(0.5);
+    muteHint.isHint = true; // Mark as hint (Used to toggle visibility)
+    this.muteButton.addChild(muteHint);
+
+    // TAB toggle (show/hide hints)
+    // Read from global (non-persistent) flag and apply
+    this.showHints = (typeof this.game.showHints === 'boolean') ? this.game.showHints : true;
+    this.toggleHints(this.showHints);
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.TAB]);
+    this.tabKey = this.input.keyboard.addKey(Phaser.Keyboard.TAB);
+    this.tabKey.onUp.add(function () {
+      this.showHints = !this.showHints;
+      this.game.showHints = this.showHints;   // persist across scenes (not across reload)
+      this.toggleHints(this.showHints);
+    }, this);
+
+    // Show Tab Hint
+    this.tabHint = addTabHint(this.game);
   },
   update: function () {
     updateCloudSprites(this);
@@ -133,4 +214,30 @@ var PPLevelSelectState = {
       this.state.start("PPQuestionState");
     },
   },
+
+  toggleHints: function (show) {
+    // Toggle hints under known buttons in this scene
+    this._setHintsOn(this.muteButton, show);
+    this._setHintsOn(this.level1Btn, show);
+    this._setHintsOn(this.level2Btn, show);
+    this._setHintsOn(this.level3Btn, show);
+  },
+
+  _setHintsOn: function (button, show) {
+    if (!button || !button.children) return;
+    for (var i = 0; i < button.children.length; i++) {
+      var c = button.children[i];
+      if (c && c.isHint) c.visible = show;
+    }
+  },
+
+  // Good practice, cleans up handlers keys
+  shutdown: function () {
+    if (this.oneKey)   { this.oneKey.onDown.removeAll(this);   this.oneKey.onUp.removeAll(this);   this.oneKey = null; }
+    if (this.twoKey)   { this.twoKey.onDown.removeAll(this);   this.twoKey.onUp.removeAll(this);   this.twoKey = null; }
+    if (this.threeKey) { this.threeKey.onDown.removeAll(this); this.threeKey.onUp.removeAll(this); this.threeKey = null; }
+    if (this.muteKey)  { this.muteKey.onDown.removeAll(this);  this.muteKey.onUp.removeAll(this);  this.muteKey = null; }
+    if (this.tabKey)   { this.tabKey.onUp.removeAll(this);     this.tabKey = null; }
+    if (this.tabHint)  { this.tabHint.destroy(true); this.tabHint = null; }
+  }
 };
