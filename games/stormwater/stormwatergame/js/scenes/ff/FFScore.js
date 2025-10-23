@@ -78,8 +78,32 @@ var FFScoreState = {
       .yoyo(true, 0)
       .loop(true);
 
-    // Mute button
-    createMuteButton(this);
+    // Mute button (ADA keyboard accessible with 'M' key)
+    this.muteButton = createMuteButton(this);   // or createMuteButtonPos(this, x, y)
+    // Bind 'M' for THIS scene (down = pressed look, up = toggle + reset)
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.M]);    // optional but nice
+    this.muteKey = this.input.keyboard.addKey(Phaser.Keyboard.M);
+
+    this.muteKey.onDown.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputDown) {
+       this.muteButton.events.onInputDown.dispatch(this.muteButton);  // pressed frame
+      }
+    }, this);
+
+    this.muteKey.onUp.add(function () {
+      if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputUp) {
+        this.muteButton.events.onInputUp.dispatch(this.muteButton);    // toggle + frame reset
+      } else if (window.AudioManager && typeof AudioManager.toggleMusic === 'function') {
+        AudioManager.toggleMusic(this);  // fallback if a scene doesn’t draw a button
+      }
+    }, this);
+
+    // Mute Key Icon
+    var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
+    muteHint.anchor.set(0.1, 0.-0.3);
+    muteHint.scale.setTo(0.5);
+    muteHint.isHint = true; // Mark as hint (Used to toggle visibility)
+    this.muteButton.addChild(muteHint);
 
     // Start Animation
     this.animationSpeed = 500;
@@ -96,6 +120,63 @@ var FFScoreState = {
 
     // Audio
     AudioManager.playSong("results_music", this);
+
+    // Hint icons under each Pause button
+    function addHint(parentBtn, texKey, yFactor, scale) {
+      if (!parentBtn) return;
+      var s = this.add.sprite(0, parentBtn.height * 0.65, texKey);
+      s.anchor.set(0, 1.0);
+      s.scale.setTo(0.5);
+      s.isHint = true;                 // mark so toggleHints() can find it
+      parentBtn.addChild(s);
+    }
+    addHint.call(this, this.replayButton, "icon_r");     // R under Replay
+    addHint.call(this, this.homeButton,    "icon_h");     // H under Home
+
+    // Tab to show/hide all hint icons in this scene
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.TAB]);
+    this.tabKey = this.input.keyboard.addKey(Phaser.Keyboard.TAB);
+    this.tabKey.onUp.add(function () {
+      this.showHints = !this.showHints;
+      this.game.showHints = this.showHints;   // persist across scenes (not across refresh)
+      this.toggleHints(this.showHints);
+    }, this);
+    // Read global (non-persistent) preference and apply now
+    this.showHints = (typeof this.game.showHints === 'boolean') ? this.game.showHints : true;
+    this.toggleHints(this.showHints);
+
+    // Keyboard Accessibility for pause overlay
+    // Capture keys so the browser doesn't hijack them
+    this.input.keyboard.addKeyCapture([
+      Phaser.Keyboard.R,
+      Phaser.Keyboard.H,
+      Phaser.Keyboard.M
+    ]);
+
+    // R - Replay
+    this.rKey = this.input.keyboard.addKey(Phaser.Keyboard.R);
+    this.rKey.onDown.add(function () {
+      var b = this.replayButton;
+      if (b && b.events && b.events.onInputDown) b.events.onInputDown.dispatch(b);
+    }, this);
+    this.rKey.onUp.add(function () {
+      var b = this.replayButton;
+      if (b && b.events && b.events.onInputUp) b.events.onInputUp.dispatch(b);
+    }, this);
+
+    // H - Home
+    this.hKey = this.input.keyboard.addKey(Phaser.Keyboard.H);
+    this.hKey.onDown.add(function () {
+      var b = this.homeButton;
+      if (b && b.events && b.events.onInputDown) b.events.onInputDown.dispatch(b);
+    }, this);
+    this.hKey.onUp.add(function () {
+      var b = this.homeButton;
+      if (b && b.events && b.events.onInputUp) b.events.onInputUp.dispatch(b);
+    }, this);
+
+    // Show Tab Hint
+    this.tabHint = addTabHint(this.game);
   },
   update: function () {
     updateCloudSprites(this);
@@ -112,4 +193,27 @@ var FFScoreState = {
       this.state.start("FFGameState");
     },
   },
+
+  toggleHints: function (show) {
+    this._setHintsOn(this.replayButton, show);
+    this._setHintsOn(this.homeButton,    show);
+    this._setHintsOn(this.muteButton,    show);
+  },
+  _setHintsOn: function (button, show) {
+    if (!button || !button.children) return;
+    for (var i = 0; i < button.children.length; i++) {
+      var c = button.children[i];
+      if (c && c.isHint) c.visible = show;
+    }
+  },
+
+  shutdown: function () { // cleanup
+    if (this.rKey)     { this.rKey.onDown.removeAll(this);     this.rKey.onUp.removeAll(this);     this.rKey = null; }
+    if (this.hKey)     { this.hKey.onDown.removeAll(this);     this.hKey.onUp.removeAll(this);     this.hKey = null; }
+    if (this.mKey)     { this.mKey.onDown.removeAll(this);     this.mKey.onUp.removeAll(this);     this.mKey = null; }
+    if (this.tabKey) {
+    this.tabKey.onUp.removeAll(this);
+    this.tabKey = null;
+    }
+  }
 };

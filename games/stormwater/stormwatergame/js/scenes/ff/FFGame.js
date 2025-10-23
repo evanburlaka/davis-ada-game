@@ -286,6 +286,28 @@ var FFGameState = {
     );
     this.pauseButton.scale.setTo(0.75);
 
+    // Enter Key Icon
+    var nextHint = this.add.sprite(0, this.resultsNextButton.height * 0.65, "icon_enter");
+    nextHint.anchor.set(-1.5, 1.0);
+    nextHint.scale.setTo(0.4);
+    nextHint.isHint = true; // Mark as hint (Used to toggle visibility)
+    this.resultsNextButton.addChild(nextHint);
+
+    //Keyboard: ENTER for Next
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.ENTER]);
+
+    this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+    this.enterKey.onDown.add(function () {
+      if (this.resultsNextButton && this.resultsNextButton.events && this.resultsNextButton.events.onInputDown) {
+        this.resultsNextButton.events.onInputDown.dispatch(this.resultsNextButton);   // pressed look
+      }
+    }, this);
+    this.enterKey.onUp.add(function () {
+      if (this.resultsNextButton && this.resultsNextButton.events && this.resultsNextButton.events.onInputUp) {
+        this.resultsNextButton.events.onInputUp.dispatch(this.resultsNextButton);     // normal click + reset
+      }
+    }, this);
+
     // Mute Button
     createMuteButton(this);
 
@@ -487,6 +509,7 @@ var FFGameState = {
   toggleHints: function (show) {
     this._setHintsOn(this.pauseButton, show);
     this._setHintsOn(this.muteButton,  show);
+    this._setHintsOn(this.resultsNextButton, show);
   },
   _setHintsOn: function (button, show) {
     if (!button || !button.children) return;
@@ -501,5 +524,6 @@ var FFGameState = {
     if (this.muteKey) { this.muteKey.onDown.removeAll(this); this.muteKey.onUp.removeAll(this); this.muteKey = null; }
     if (this.tabKey)  { this.tabKey.onUp.removeAll(this);    this.tabKey = null; }
     if (this.tabHint) { this.tabHint.destroy(true); this.tabHint = null; }
+    if (this.enterKey) { this.enterKey.onDown.removeAll(this); this.enterKey.onUp.removeAll(this); this.enterKey = null; }
   },
 };
