@@ -182,6 +182,11 @@ var ChooseGameState = {
 
     // Audio
     AudioManager.playSong("title_music", this);
+
+    try {
+      if (window.Narrator && window.Narrator.enabled)
+        window.Narrator.speak("Choose a game to play.");
+    } catch(e){}
   },
   update: function () {
     updateCloudSprites(this);

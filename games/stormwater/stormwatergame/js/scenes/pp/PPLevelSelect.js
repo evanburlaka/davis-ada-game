@@ -193,6 +193,11 @@ var PPLevelSelectState = {
 
     // Show Tab Hint
     this.tabHint = addTabHint(this.game);
+
+    try {
+      if (window.Narrator && window.Narrator.enabled)
+        window.Narrator.speak("Choose a level to start.");
+    } catch(e){}
   },
   update: function () {
     updateCloudSprites(this);

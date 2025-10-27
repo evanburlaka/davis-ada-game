@@ -116,7 +116,10 @@ var TitleState = {
     // Show Tab Hint
     this.tabHint = addTabHint(this.game);
 
-
+    try {
+      if(window.Narrator && window.Narrator.enabled)
+        window.Narrator.speak("Fast Flow game starting. Listen carefully!");
+    } catch(e){}
   },
   update: function () {
     updateCloudSprites(this);

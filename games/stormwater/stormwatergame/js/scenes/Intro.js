@@ -266,6 +266,13 @@ var IntroState = {
 
     // Show Tab Hint
     this.tabHint = addTabHint(this.game);
+
+    try {
+      if (window.Narrator && window.Narrator.enabled){
+        var msg = Array.isArray(TextData.intro) ? TextData.intro.join(' ') : "Welcome!";
+        window.Narrator.speak(msg);
+      }
+    } catch(e){}
   },
   update: function () {
     updateCloudSprites(this);

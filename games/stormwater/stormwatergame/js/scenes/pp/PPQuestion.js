@@ -153,6 +153,15 @@ var PPQuestionState = {
     if (typeof addTabHint === 'function') {
       this.tabHint = addTabHint(this.game);
     }
+
+    try {
+      if (window.Narrator && window.Narrator.enabled) {
+        var count = (PPGame.optionOrder || []).length;
+        var msg = "Make a selection.";
+        if (count) msg += "There are " + count + " options.";
+        window.Narrator.speak(msg);
+      }
+    } catch(e){}
   },
   update: function () {},
 

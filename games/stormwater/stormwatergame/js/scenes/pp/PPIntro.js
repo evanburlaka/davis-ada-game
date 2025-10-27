@@ -194,6 +194,11 @@ var PPIntroState = {
 
     // Show Tab Hint
     this.tabHint = addTabHint(this.game);
+
+    try {
+      if (window.Narrator && window.Narrator.enabled)
+        window.Narrator.speak("Pollution Prevention game starting.");
+    } catch(e){}
   },
   update: function () {
     updateCloudSprites(this);
