@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arrow Key Cursor Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background-color: #fff;
+            border: 2px solid #333;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        
+        #cursor {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #4CAF50;
+            border: 3px solid #2E7D32;
+            border-radius: 50%;
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        #cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+        
+        .instructions {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+        }
+        
+        .info {
+            text-align: center;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #fff3e0;
+            border-radius: 5px;
+        }
+        
+        .controls {
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .key {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 2px;
+            background-color: #fff;
+            border: 2px solid #333;
+            border-radius: 3px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h2>Arrow Key Cursor Control</h2>
+        <p>Use arrow keys to move the cursor:</p>
+        <div class="controls">
+            <div><span class="key">↑</span></div>
+            <div>
+                <span class="key">←</span>
+                <span class="key">↓</span>
+                <span class="key">→</span>
+            </div>
+        </div>
+        <p style="margin-top: 10px;">Hold <span class="key">Shift</span> to move faster!</p>
+    </div>
+    
+    <div id="game-container">
+        <div id="cursor"></div>
+    </div>
+    
+    <div class="info">
+        <p id="position">Position: (0, 0) | Speed: Normal</p>
+    </div>
+
+    <script>
+        // Cursor state
+        const cursor = {
+            x: 0,
+            y: 0,
+            speed: 5,      // Normal speed
+            fastSpeed: 15, // Fast speed with Shift
+            element: document.getElementById('cursor')
+        };
+        
+        // Container bounds
+        const container = document.getElementById('game-container');
+        const containerRect = container.getBoundingClientRect();
+        const maxX = containerRect.width - cursor.element.offsetWidth;
+        const maxY = containerRect.height - cursor.element.offsetHeight;
+        
+        // Position info element
+        const positionInfo = document.getElementById('position');
+        
+        // Track which keys are currently pressed
+        const keysPressed = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            Shift: false
+        };
+        
+        // Key down event
+        document.addEventListener('keydown', (e) => {
+            // Prevent default arrow key behavior (scrolling)
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                keysPressed[e.key] = true;
+            }
+            
+            if (e.key === 'Shift') {
+                keysPressed.Shift = true;
+            }
+        });
+        
+        // Key up event
+        document.addEventListener('keyup', (e) => {
+            if (e.key in keysPressed) {
+                keysPressed[e.key] = false;
+            }
+        });
+        
+        // Update cursor position
+        function updateCursor() {
+            // Determine current speed
+            const currentSpeed = keysPressed.Shift ? cursor.fastSpeed : cursor.speed;
+            
+            // Update position based on pressed keys
+            if (keysPressed.ArrowUp) {
+                cursor.y -= currentSpeed;
+            }
+            if (keysPressed.ArrowDown) {
+                cursor.y += currentSpeed;
+            }
+            if (keysPressed.ArrowLeft) {
+                cursor.x -= currentSpeed;
+            }
+            if (keysPressed.ArrowRight) {
+                cursor.x += currentSpeed;
+            }
+            
+            // Clamp to bounds
+            cursor.x = Math.max(0, Math.min(cursor.x, maxX));
+            cursor.y = Math.max(0, Math.min(cursor.y, maxY));
+            
+            // Update DOM
+            cursor.element.style.left = cursor.x + 'px';
+            cursor.element.style.top = cursor.y + 'px';
+            
+            // Update position info
+            const speedText = keysPressed.Shift ? 'Fast' : 'Normal';
+            positionInfo.textContent = `Position: (${Math.round(cursor.x)}, ${Math.round(cursor.y)}) | Speed: ${speedText}`;
+            
+            // Continue animation loop
+            requestAnimationFrame(updateCursor);
+        }
+        
+        // Start the update loop
+        requestAnimationFrame(updateCursor);
+        
+        // Optional: Mouse click to teleport cursor
+        container.addEventListener('click', (e) => {
+            const rect = container.getBoundingClientRect();
+            cursor.x = e.clientX - rect.left - cursor.element.offsetWidth / 2;
+            cursor.y = e.clientY - rect.top - cursor.element.offsetHeight / 2;
+            
+            // Clamp to bounds
+            cursor.x = Math.max(0, Math.min(cursor.x, maxX));
+            cursor.y = Math.max(0, Math.min(cursor.y, maxY));
+        });
+    </script>
+</body>
+</html>
