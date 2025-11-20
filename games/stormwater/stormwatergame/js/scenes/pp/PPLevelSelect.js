@@ -1,7 +1,7 @@
 "use strict";
 
 var PPLevelSelectState = {
-  preload: function () {},
+  preload: function () { },
   create: function () {
     // Set Restart Point
     RestartState = "PPLevelSelectState";
@@ -134,8 +134,8 @@ var PPLevelSelectState = {
     }
 
     // Bind 1/2/3 to level1/2/3
-    this.oneKey   = bindKeyToButton(this, Phaser.Keyboard.ONE,   "level1Btn");
-    this.twoKey   = bindKeyToButton(this, Phaser.Keyboard.TWO,   "level2Btn");
+    this.oneKey = bindKeyToButton(this, Phaser.Keyboard.ONE, "level1Btn");
+    this.twoKey = bindKeyToButton(this, Phaser.Keyboard.TWO, "level2Btn");
     this.threeKey = bindKeyToButton(this, Phaser.Keyboard.THREE, "level3Btn");
 
     // Hint icons under each level button (1/2/3)
@@ -160,7 +160,7 @@ var PPLevelSelectState = {
 
     this.muteKey.onDown.add(function () {
       if (this.muteButton && this.muteButton.events && this.muteButton.events.onInputDown) {
-       this.muteButton.events.onInputDown.dispatch(this.muteButton);  // pressed frame
+        this.muteButton.events.onInputDown.dispatch(this.muteButton);  // pressed frame
       }
     }, this);
 
@@ -174,7 +174,7 @@ var PPLevelSelectState = {
 
     // Mute Key Icon
     var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
-    muteHint.anchor.set(0.1, 0.-0.3);
+    muteHint.anchor.set(0.1, 0. - 0.3);
     muteHint.scale.setTo(0.5);
     muteHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.muteButton.addChild(muteHint);
@@ -191,13 +191,49 @@ var PPLevelSelectState = {
       this.toggleHints(this.showHints);
     }, this);
 
-    // Show Tab Hint
     this.tabHint = addTabHint(this.game);
+
+    // --- Keyboard Navigation (Arrow Keys) ---
+    this.levelButtons = [this.level1Btn, this.level2Btn, this.level3Btn];
+    this.selectedLevelIndex = 0; // Default to Level 1
+
+    // Add highlight graphics to each button
+    for (var i = 0; i < this.levelButtons.length; i++) {
+      var btn = this.levelButtons[i];
+      var g = this.add.graphics(0, 0);
+      g.lineStyle(5, 0xffff00, 0.8); // Yellow, slightly transparent
+      // Button size is roughly 152x58. Anchor is 0.5.
+      var w = 152;
+      var h = 58;
+      var pad = 8;
+      g.drawRoundedRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2, 10);
+      g.visible = false;
+      g.isSelectionHighlight = true;
+      btn.addChild(g);
+    }
+
+    this.updateSelection();
+
+    // Bind Arrow Keys and Enter
+    this.input.keyboard.addKeyCapture([
+      Phaser.Keyboard.LEFT,
+      Phaser.Keyboard.RIGHT,
+      Phaser.Keyboard.ENTER,
+    ]);
+
+    this.leftKey = this.input.keyboard.addKey(Phaser.Keyboard.LEFT);
+    this.leftKey.onDown.add(this.selectPreviousLevel, this);
+
+    this.rightKey = this.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+    this.rightKey.onDown.add(this.selectNextLevel, this);
+
+    this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+    this.enterKey.onDown.add(this.confirmSelection, this);
 
     try {
       if (window.Narrator && window.Narrator.enabled)
         window.Narrator.speak("Choose a level to start.");
-    } catch(e){}
+    } catch (e) { }
   },
   update: function () {
     updateCloudSprites(this);
@@ -237,12 +273,53 @@ var PPLevelSelectState = {
   },
 
   // Good practice, cleans up handlers keys
+  selectPreviousLevel: function () {
+    this.selectedLevelIndex--;
+    if (this.selectedLevelIndex < 0) {
+      this.selectedLevelIndex = this.levelButtons.length - 1;
+    }
+    this.updateSelection();
+    AudioManager.playSound("bloop_sfx", this);
+  },
+
+  selectNextLevel: function () {
+    this.selectedLevelIndex++;
+    if (this.selectedLevelIndex >= this.levelButtons.length) {
+      this.selectedLevelIndex = 0;
+    }
+    this.updateSelection();
+    AudioManager.playSound("bloop_sfx", this);
+  },
+
+  confirmSelection: function () {
+    var btn = this.levelButtons[this.selectedLevelIndex];
+    if (btn && btn.events && btn.events.onInputUp) {
+      // Simulate a click
+      btn.events.onInputUp.dispatch(btn, null, false);
+    }
+  },
+
+  updateSelection: function () {
+    for (var i = 0; i < this.levelButtons.length; i++) {
+      var btn = this.levelButtons[i];
+      // Find the highlight child
+      for (var j = 0; j < btn.children.length; j++) {
+        if (btn.children[j].isSelectionHighlight) {
+          btn.children[j].visible = i === this.selectedLevelIndex;
+        }
+      }
+    }
+  },
+
   shutdown: function () {
-    if (this.oneKey)   { this.oneKey.onDown.removeAll(this);   this.oneKey.onUp.removeAll(this);   this.oneKey = null; }
-    if (this.twoKey)   { this.twoKey.onDown.removeAll(this);   this.twoKey.onUp.removeAll(this);   this.twoKey = null; }
+    if (this.oneKey) { this.oneKey.onDown.removeAll(this); this.oneKey.onUp.removeAll(this); this.oneKey = null; }
+    if (this.twoKey) { this.twoKey.onDown.removeAll(this); this.twoKey.onUp.removeAll(this); this.twoKey = null; }
     if (this.threeKey) { this.threeKey.onDown.removeAll(this); this.threeKey.onUp.removeAll(this); this.threeKey = null; }
-    if (this.muteKey)  { this.muteKey.onDown.removeAll(this);  this.muteKey.onUp.removeAll(this);  this.muteKey = null; }
-    if (this.tabKey)   { this.tabKey.onUp.removeAll(this);     this.tabKey = null; }
-    if (this.tabHint)  { this.tabHint.destroy(true); this.tabHint = null; }
+    if (this.muteKey) { this.muteKey.onDown.removeAll(this); this.muteKey.onUp.removeAll(this); this.muteKey = null; }
+    if (this.tabKey) { this.tabKey.onUp.removeAll(this); this.tabKey = null; }
+    if (this.tabHint) { this.tabHint.destroy(true); this.tabHint = null; }
+    if (this.leftKey) { this.leftKey.onDown.removeAll(this); this.leftKey = null; }
+    if (this.rightKey) { this.rightKey.onDown.removeAll(this); this.rightKey = null; }
+    if (this.enterKey) { this.enterKey.onDown.removeAll(this); this.enterKey = null; }
   }
 };
