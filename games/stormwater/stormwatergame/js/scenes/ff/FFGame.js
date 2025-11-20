@@ -1,7 +1,7 @@
 "use strict";
 
 var FFGameState = {
-  preload: function () {},
+  preload: function () { },
   create: function () {
     // Set Restart Point
     RestartState = "FFGameState";
@@ -33,9 +33,10 @@ var FFGameState = {
       );
       outlineSprite.anchor.setTo(0.5, 0.5);
       outlineSprite.scale.setTo(spriteData.scale.x, spriteData.scale.y);
-      this.add
-        .tween(outlineSprite)
-        .to({ alpha: 0.1 }, 800, "Linear", true, 0, -1, true);
+      // this.add
+      //   .tween(outlineSprite)
+      //   .to({ alpha: 0.1 }, 800, "Linear", true, 0, -1, true);
+      outlineSprite.alpha = 0; // Hide initially, controlled by cursor logic
       this.topLayer.add(outlineSprite);
 
       var clickableSprite = this.add.sprite(
@@ -298,12 +299,12 @@ var FFGameState = {
 
     this.enterKey = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
     this.enterKey.onDown.add(function () {
-      if (this.resultsNextButton && this.resultsNextButton.events && this.resultsNextButton.events.onInputDown) {
+      if (this.resultsNextButton && this.resultsNextButton.visible && this.resultsNextButton.events && this.resultsNextButton.events.onInputDown) {
         this.resultsNextButton.events.onInputDown.dispatch(this.resultsNextButton);   // pressed look
       }
     }, this);
     this.enterKey.onUp.add(function () {
-      if (this.resultsNextButton && this.resultsNextButton.events && this.resultsNextButton.events.onInputUp) {
+      if (this.resultsNextButton && this.resultsNextButton.visible && this.resultsNextButton.events && this.resultsNextButton.events.onInputUp) {
         this.resultsNextButton.events.onInputUp.dispatch(this.resultsNextButton);     // normal click + reset
       }
     }, this);
@@ -329,7 +330,7 @@ var FFGameState = {
 
     // Pause Key Icon
     var pauseHint = this.add.sprite(0, this.pauseButton.height * 0.65, "icon_p");
-    pauseHint.anchor.set(0.1, 0.-0.3);
+    pauseHint.anchor.set(0.1, 0. - 0.3);
     pauseHint.scale.setTo(0.5);
     pauseHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.pauseButton.addChild(pauseHint);
@@ -351,7 +352,7 @@ var FFGameState = {
 
     // Mute Key Icon
     var muteHint = this.add.sprite(0, this.muteButton.height * 0.65, "icon_m");
-    muteHint.anchor.set(0.1, 0.-0.3);
+    muteHint.anchor.set(0.1, 0. - 0.3);
     muteHint.scale.setTo(0.5);
     muteHint.isHint = true; // Mark as hint (Used to toggle visibility)
     this.muteButton.addChild(muteHint);
@@ -374,8 +375,27 @@ var FFGameState = {
     if (typeof addTabHint === 'function') {
       this.tabHint = addTabHint(this.game);
     }
+
+    // --- Keyboard Cursor Navigation ---
+    this.selectedOptionIndex = -1;
+    this.selectedQuestionIndex = -1;
+    this.nextMoveTime = 0;
+    this.nextSelectTime = 0;
+    this.input.keyboard.addKeyCapture([Phaser.Keyboard.LEFT, Phaser.Keyboard.RIGHT, Phaser.Keyboard.UP, Phaser.Keyboard.DOWN, Phaser.Keyboard.ENTER]);
+
+    this.cursorLeft = this.input.keyboard.addKey(Phaser.Keyboard.LEFT);
+    this.cursorRight = this.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+    this.cursorUp = this.input.keyboard.addKey(Phaser.Keyboard.UP);
+    this.cursorDown = this.input.keyboard.addKey(Phaser.Keyboard.DOWN);
+    this.keyEnter = this.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+
+    this.cursorLeft.onDown.add(this.moveCursorPrev, this);
+    this.cursorRight.onDown.add(this.moveCursorNext, this);
+    this.cursorUp.onDown.add(this.moveCursorPrev, this);
+    this.cursorDown.onDown.add(this.moveCursorNext, this);
+    this.keyEnter.onDown.add(this.selectCurrentOption, this);
   },
-  update: function () {},
+  update: function () { },
   setOptionsClickable: function (clickable) {
     for (var i = 0; i < this.optionSprites.length; ++i) {
       if (this.optionSprites[i].enabled) {
@@ -389,6 +409,8 @@ var FFGameState = {
 
     this.setOptionsClickable(false);
     this.questionBoxGroup.visible = true;
+    this.selectedQuestionIndex = 0;
+    this.updateQuestionVisuals();
     this.add
       .tween(this.questionBoxGroup.scale)
       .from({ x: 0.5, y: 0.5 }, 500, "Elastic", true);
@@ -415,8 +437,8 @@ var FFGameState = {
         ? data.wrong.correct
         : data.wrong.wrong
       : correct
-      ? data.correct.correct
-      : data.correct.wrong;
+        ? data.correct.correct
+        : data.correct.wrong;
 
     this.resultsBoxSprite.loadTexture(
       correct ? "ff_correct_box" : "ff_oops_box"
@@ -427,7 +449,7 @@ var FFGameState = {
       .tween(this.resultsBoxGroup.scale)
       .from({ x: 0.5, y: 0.5 }, 500, "Elastic", true);
     this.time.events.add(
-      1000,
+      1500,
       function () {
         this.resultsNextButton.visible = true;
       },
@@ -488,9 +510,19 @@ var FFGameState = {
     this.setOptionsClickable(true);
 
     FFGame.completed++;
-    if (FFGame.completed >= FFGame.options.length) {
+
+    // Count remaining clickable sprites
+    var clickableCount = 0;
+    for (var i = 0; i < this.optionSprites.length; i++) {
+      if (this.optionSprites[i].enabled) {
+        clickableCount++;
+      }
+    }
+
+    // End game when no clickable sprites remain
+    if (clickableCount === 0) {
       this.time.events.add(
-        1000,
+        1500,
         function () {
           this.state.start("FFScoreState");
         },
@@ -508,7 +540,7 @@ var FFGameState = {
 
   toggleHints: function (show) {
     this._setHintsOn(this.pauseButton, show);
-    this._setHintsOn(this.muteButton,  show);
+    this._setHintsOn(this.muteButton, show);
     this._setHintsOn(this.resultsNextButton, show);
   },
   _setHintsOn: function (button, show) {
@@ -519,11 +551,114 @@ var FFGameState = {
     }
   },
 
+  moveCursorNext: function () { this.moveCursor(1); },
+  moveCursorPrev: function () { this.moveCursor(-1); },
+
+  moveCursor: function (delta) {
+    // Block cursor movement if modals are open
+    if (this.resultsBoxGroup.visible) return;
+
+    // 0.5s delay between inputs
+    if (this.game.time.now < this.nextMoveTime) return;
+    this.nextMoveTime = this.game.time.now + 500;
+
+    if (this.questionBoxGroup.visible) {
+      this.moveQuestionCursor(delta);
+      return;
+    }
+
+    if (!this.optionSprites) return;
+    var len = this.optionSprites.length;
+    var originalIndex = this.selectedOptionIndex;
+
+    if (this.selectedOptionIndex === -1) {
+      this.selectedOptionIndex = delta > 0 ? 0 : len - 1;
+    } else {
+      this.selectedOptionIndex = (this.selectedOptionIndex + delta + len) % len;
+    }
+
+    // Skip disabled options
+    var attempts = 0;
+    while (this.optionSprites[this.selectedOptionIndex] && !this.optionSprites[this.selectedOptionIndex].enabled && attempts < len) {
+      this.selectedOptionIndex = (this.selectedOptionIndex + delta + len) % len;
+      attempts++;
+    }
+
+    if (attempts >= len) {
+      this.selectedOptionIndex = originalIndex;
+    }
+
+    this.updateSelectionVisuals();
+    AudioManager.playSound("bloop_sfx", this);
+  },
+
+  updateSelectionVisuals: function () {
+    if (!this.optionSprites) return;
+    for (var i = 0; i < this.optionSprites.length; i++) {
+      var sprite = this.optionSprites[i];
+      if (!sprite.enabled) {
+        sprite.outline.alpha = 0;
+        continue;
+      }
+      // Show outline if selected
+      sprite.outline.alpha = (i === this.selectedOptionIndex) ? 1.0 : 0.0;
+    }
+  },
+
+  selectCurrentOption: function () {
+    // 0.5s delay between selections
+    if (this.game.time.now < this.nextSelectTime) return;
+    this.nextSelectTime = this.game.time.now + 500;
+
+    if (this.questionBoxGroup.visible) {
+      this.selectQuestionOption();
+      return;
+    }
+
+    if (this.selectedOptionIndex >= 0 && this.selectedOptionIndex < this.optionSprites.length) {
+      var sprite = this.optionSprites[this.selectedOptionIndex];
+      // Check if the sprite is actually interactable (inputEnabled is set by setOptionsClickable)
+      if (sprite.enabled && sprite.clickable.inputEnabled && sprite.clickable.events.onInputDown) {
+        sprite.clickable.events.onInputDown.dispatch(sprite.clickable);
+      }
+    }
+  },
+
+  moveQuestionCursor: function (delta) {
+    if (this.selectedQuestionIndex === -1) {
+      this.selectedQuestionIndex = 0;
+    } else {
+      this.selectedQuestionIndex = (this.selectedQuestionIndex + delta + 2) % 2;
+    }
+    this.updateQuestionVisuals();
+    AudioManager.playSound("bloop_sfx", this);
+  },
+
+  updateQuestionVisuals: function () {
+    var fixItSelected = this.selectedQuestionIndex === 0;
+    this.fixItButton.tint = fixItSelected ? 0xffffff : 0x888888;
+    this.itsOkButton.tint = !fixItSelected ? 0xffffff : 0x888888;
+  },
+
+  selectQuestionOption: function () {
+    if (this.selectedQuestionIndex === 0) {
+      this.fixItButton.events.onInputUp.dispatch(this.fixItButton, null, false);
+    } else if (this.selectedQuestionIndex === 1) {
+      this.itsOkButton.events.onInputUp.dispatch(this.itsOkButton, null, false);
+    }
+  },
+
   shutdown: function () {
-    if (this.pKey)    { this.pKey.onDown.removeAll(this);    this.pKey.onUp.removeAll(this);    this.pKey = null; }
+    if (this.pKey) { this.pKey.onDown.removeAll(this); this.pKey.onUp.removeAll(this); this.pKey = null; }
     if (this.muteKey) { this.muteKey.onDown.removeAll(this); this.muteKey.onUp.removeAll(this); this.muteKey = null; }
-    if (this.tabKey)  { this.tabKey.onUp.removeAll(this);    this.tabKey = null; }
+    if (this.tabKey) { this.tabKey.onUp.removeAll(this); this.tabKey = null; }
     if (this.tabHint) { this.tabHint.destroy(true); this.tabHint = null; }
     if (this.enterKey) { this.enterKey.onDown.removeAll(this); this.enterKey.onUp.removeAll(this); this.enterKey = null; }
+
+    if (this.cursorLeft) { this.cursorLeft.onDown.removeAll(this); this.cursorLeft = null; }
+    if (this.cursorRight) { this.cursorRight.onDown.removeAll(this); this.cursorRight = null; }
+    if (this.cursorUp) { this.cursorUp.onDown.removeAll(this); this.cursorUp = null; }
+    if (this.cursorDown) { this.cursorDown.onDown.removeAll(this); this.cursorDown = null; }
+    if (this.keyEnter) { this.keyEnter.onDown.removeAll(this); this.keyEnter = null; }
   },
 };
